@@ -7,18 +7,18 @@ namespace Cinema.Areas.Admin.Controllers
     [Area(CD.ADMIN_AREA)]
     public class CenemaController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly CenemaService _CenemaService;
+        private readonly IRepository<Cenema> _cenemaRepo;
+        private readonly CenemaService _CenemaService=new CenemaService();
 
-        public CenemaController()
+        public CenemaController(IRepository<Cenema> cenemaRepo)
         {
-            _context = new ApplicationDbContext();
-            _CenemaService = new CenemaService();
+            _cenemaRepo = cenemaRepo;
         }
 
-        public IActionResult Index(string CenemaName, int page = 1)
+        public async Task<IActionResult> Index(string CenemaName, int page = 1)
         {
-            var Cenemas = _context.cenemas.AsQueryable();
+            //var Cenemas = _context.cenemas.AsQueryable();
+            var Cenemas =await _cenemaRepo.GetAllAsync();
             //filter 
             if (CenemaName != null)
             {
@@ -41,7 +41,7 @@ namespace Cinema.Areas.Admin.Controllers
             return View(new CreateCenemaVM());
         }
         [HttpPost]
-        public IActionResult Create(CreateCenemaVM createCenemaVM)
+        public async Task<IActionResult> Create(CreateCenemaVM createCenemaVM)
         {
             if (!ModelState.IsValid)
             {
@@ -59,14 +59,17 @@ namespace Cinema.Areas.Admin.Controllers
                 var fileName = _CenemaService.SaveFile(createCenemaVM.ImageFile);
                 Cenema.Logo = fileName;
             }
-            _context.cenemas.Add(Cenema);
-            _context.SaveChanges();
+            //_context.cenemas.Add(Cenema);
+            //_context.SaveChanges();
+            await _cenemaRepo.CreateAsync(Cenema);
+            await _cenemaRepo.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
         [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var Cenema = _context.cenemas.FirstOrDefault(c => c.Id == id);
+            //var Cenema = _context.cenemas.FirstOrDefault(c => c.Id == id);
+            var Cenema =await _cenemaRepo.GetOneAsync(c => c.Id == id);
             if (Cenema is null)
             {
                 return NotFound();
@@ -74,10 +77,10 @@ namespace Cinema.Areas.Admin.Controllers
             return View(Cenema);
         }
         [HttpPost]
-        public IActionResult Edit(Cenema Cenema, IFormFile ImageFile)
+        public async Task<IActionResult> Edit(Cenema Cenema, IFormFile ImageFile)
         {
-            var CenemaInDb = _context.cenemas.AsNoTracking().FirstOrDefault(b => b.Id == Cenema.Id);
-
+            //var CenemaInDb = _context.cenemas.AsNoTracking().FirstOrDefault(b => b.Id == Cenema.Id);
+                var CenemaInDb =await _cenemaRepo.GetOneAsync(b => b.Id == Cenema.Id,IsTracking:false);
 
             if (ImageFile != null && ImageFile.Length > 0)
             {
@@ -89,20 +92,25 @@ namespace Cinema.Areas.Admin.Controllers
             {
                 Cenema.Logo = CenemaInDb.Logo;
             }
-            _context.cenemas.Update(Cenema);
-            _context.SaveChanges();
+            //_context.cenemas.Update(Cenema);
+            //_context.SaveChanges();
+            _cenemaRepo.Update(Cenema);
+            await _cenemaRepo.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var Cenema = _context.cenemas.FirstOrDefault(c => c.Id == id);
+            //var Cenema = _context.cenemas.FirstOrDefault(c => c.Id == id);
+            var Cenema =await _cenemaRepo.GetOneAsync(c => c.Id == id);
             if (Cenema is null)
             {
                 return NotFound();
             }
             _CenemaService.RemoveFile(Cenema.Logo);
-            _context.cenemas.Remove(Cenema);
-            _context.SaveChanges();
+            //_context.cenemas.Remove(Cenema);
+            //_context.SaveChanges();
+            _cenemaRepo.Delete(Cenema);
+            await _cenemaRepo.CommitAsync();
             return RedirectToAction(nameof(Index));
 
         }

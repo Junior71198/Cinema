@@ -7,18 +7,18 @@ namespace Cinema.Areas.Admin.Controllers
     [Area(CD.ADMIN_AREA)]
     public class ActorController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly ActorService _actorService;
+        private readonly IRepository<Actor> _actorRepo;
+        public ActorService _actorService=new ActorService();
 
-        public ActorController()
+        public ActorController(IRepository<Actor> actorRepo)
         {
-            _context = new ApplicationDbContext();
-            _actorService = new ActorService();
+            _actorRepo = actorRepo;
+            
         }
 
-        public IActionResult Index(string actorName, int page = 1)
+        public async Task<IActionResult> Index(string actorName, int page = 1)
         {
-            var actors = _context.actors.AsQueryable();
+            var actors =await _actorRepo.GetAllAsync();
             //filter 
             if (actorName != null)
             {
@@ -41,7 +41,7 @@ namespace Cinema.Areas.Admin.Controllers
             return View(new CreateActorVM());
         }
         [HttpPost]
-        public IActionResult Create(CreateActorVM createActorVM)
+        public async Task<IActionResult> Create(CreateActorVM createActorVM)
         {
             if (!ModelState.IsValid)
             {
@@ -59,14 +59,17 @@ namespace Cinema.Areas.Admin.Controllers
                 var fileName = _actorService.SaveFile(createActorVM.ImageFile);
                 actor.Logo = fileName;
             }
-            _context.actors.Add(actor);
-            _context.SaveChanges();
+            //_context.actors.Add(actor);
+            //_context.SaveChanges();
+            await _actorRepo.CreateAsync(actor);
+           await _actorRepo.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
         [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var actor = _context.actors.FirstOrDefault(c => c.Id == id);
+            //var actor = _context.actors.FirstOrDefault(c => c.Id == id);
+            var actor =await _actorRepo.GetOneAsync(c => c.Id == id);
             if (actor is null)
             {
                 return NotFound();
@@ -74,9 +77,10 @@ namespace Cinema.Areas.Admin.Controllers
             return View(actor);
         }
         [HttpPost]
-        public IActionResult Edit(Actor actor, IFormFile ImageFile)
+        public async Task<IActionResult> Edit(Actor actor, IFormFile ImageFile)
         {
-            var actorInDb = _context.actors.AsNoTracking().FirstOrDefault(b => b.Id == actor.Id);
+            //var actorInDb = _context.actors.AsNoTracking().FirstOrDefault(b => b.Id == actor.Id);
+              var actorInDb =await _actorRepo.GetOneAsync(b => b.Id == actor.Id,IsTracking: false);
 
 
             if (ImageFile != null && ImageFile.Length > 0)
@@ -89,20 +93,25 @@ namespace Cinema.Areas.Admin.Controllers
             {
                 actor.Logo = actorInDb.Logo;
             }
-            _context.actors.Update(actor);
-            _context.SaveChanges();
+            //_context.actors.Update(actor);
+            //_context.SaveChanges();
+            _actorRepo.Update(actor);
+           await _actorRepo.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var actor = _context.actors.FirstOrDefault(c => c.Id == id);
+            //var actor = _context.actors.FirstOrDefault(c => c.Id == id);
+            var actor =await _actorRepo.GetOneAsync(c => c.Id == id);
             if (actor is null)
             {
                 return NotFound();
             }
             _actorService.RemoveFile(actor.Logo);
-            _context.actors.Remove(actor);
-            _context.SaveChanges();
+            //_context.actors.Remove(actor);
+            //_context.SaveChanges();
+            _actorRepo.Delete(actor);
+             await _actorRepo.CommitAsync();
             return RedirectToAction(nameof(Index));
 
         }

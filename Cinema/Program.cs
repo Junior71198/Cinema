@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace Cinema
 {
     public class Program
@@ -8,6 +10,23 @@ namespace Cinema
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+
+
+
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>(option =>
+            {
+                //option.User.RequireUniqueEmail = true;
+            })
+                .AddEntityFrameworkStores<ApplicationDbContext>();
+                
+
+            //For Register
+
+            builder.Services.AddScoped<IRepository<Category>, Repository<Category>>();
+            builder.Services.AddScoped<IRepository<Actor>, Repository<Actor>>();
+            builder.Services.AddScoped<IRepository<Cenema>, Repository<Cenema>>();
+            builder.Services.AddScoped<IRepository<Movie>, Repository<Movie>>();
+            builder.Services.AddScoped<IMovieSubImageRepo, MovieSubImageRepo>();
 
             var app = builder.Build();
 

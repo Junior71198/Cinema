@@ -1,4 +1,5 @@
 using Cinema.Models;
+using Cinema.Repository;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -8,24 +9,27 @@ namespace Cinema.Areas.Admin.Controllers
 
     public class CategoryController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IRepository<Category> _categoryRepo;
 
-        public CategoryController()
+        public CategoryController(IRepository<Category> categoryRepo)
         {
-            _context = new ApplicationDbContext();
+            _categoryRepo = categoryRepo;
         }
 
-        public IActionResult Index(string categoryName)
+        public async Task<IActionResult> Index(string categoryName)
         {
-            var categories = _context.categories.AsQueryable();
+            //var categories = _context.categories.AsQueryable();
+            var categories = await _categoryRepo.GetAllAsync();
 
             if (!string.IsNullOrEmpty(categoryName))
             {
                 categories = categories.Where(c => c.Name.Contains(categoryName));
+              
+                
                 ViewBag.CategoryName = categoryName;
             }
 
-            return View(categories.AsEnumerable());
+            return View(categories);
         }
 
         [HttpGet]
@@ -35,23 +39,26 @@ namespace Cinema.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(Category category)
+        public async Task<IActionResult> Create(Category category)
         {
             if (!ModelState.IsValid)
             {
                 return View(category);
             }
-            _context.categories.Add(category);
-            _context.SaveChanges();
+            //_context.categories.Add(category);
+           await _categoryRepo.CreateAsync(category);
+            //_context.SaveChanges();
+            await _categoryRepo.CommitAsync();
             //Response.Cookies.Append("Success_Notification" , "Category Careted Successfully");
             TempData["Success_Notification"] = "Category Careted Successfully";
             return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var category = _context.categories.FirstOrDefault(c => c.Id == id);
+            //var category = _context.categories.FirstOrDefault(c => c.Id == id);
+            var category =await _categoryRepo.GetOneAsync(c => c.Id == id);
             if (category is null)
             {
                 return NotFound();
@@ -59,25 +66,30 @@ namespace Cinema.Areas.Admin.Controllers
             return View(category);
         }
         [HttpPost]
-        public IActionResult Edit(Category category)
+        public async Task<IActionResult> Edit(Category category)
         {
             if (!ModelState.IsValid)
             {
                 return View(category);
             }
-            _context.categories.Update(category);
-            _context.SaveChanges();
+            //_context.categories.Update(category);
+            _categoryRepo.Update(category);
+            //_context.SaveChanges();
+            await _categoryRepo.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var category = _context.categories.FirstOrDefault(c => c.Id == id);
+            //var category = _context.categories.FirstOrDefault(c => c.Id == id);
+            var category =await _categoryRepo.GetOneAsync(c => c.Id == id);
             if (category is null)
             {
                 return NotFound();
             }
-            _context.categories.Remove(category);
-            _context.SaveChanges();
+            //_context.categories.Remove(category);
+            _categoryRepo.Delete(category);
+            //_context.SaveChanges();
+             await _categoryRepo.CommitAsync();
             return RedirectToAction(nameof(Index));
 
         }
