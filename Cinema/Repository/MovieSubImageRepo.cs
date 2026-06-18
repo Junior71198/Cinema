@@ -2,12 +2,11 @@
 {
     public class MovieSubImageRepo : Repository<MovieSubImage> , IMovieSubImageRepo
     {
-        private readonly ApplicationDbContext _context;
-
-        public MovieSubImageRepo()
+        public MovieSubImageRepo(ApplicationDbContext context) : base(context)
         {
-            _context = new ApplicationDbContext();
         }
+
+   
 
         public void DeleteRange(IEnumerable<MovieSubImage> movieSubImages)
         {

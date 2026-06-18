@@ -5,13 +5,13 @@ namespace Cinema.Repository
 {
     public class Repository<T> : IRepository<T> where T : class
     {
-        private readonly ApplicationDbContext _context;
+        protected readonly ApplicationDbContext _context;
         private readonly DbSet<T> _dbSet;
 
-        public Repository()
+        public Repository(ApplicationDbContext context)
         {
-            _context = new ApplicationDbContext();
-            _dbSet = _context.Set<T>() ;
+            _context = context;// new ApplicationDbContext() ;
+            _dbSet = _context.Set<T>();
         }
 
         private IQueryable<T> Query(

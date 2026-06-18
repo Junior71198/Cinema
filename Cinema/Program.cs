@@ -1,4 +1,6 @@
+using Cinema.Utilities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace Cinema
 {
@@ -12,13 +14,22 @@ namespace Cinema
             builder.Services.AddControllersWithViews();
 
 
+            var connectionString =
+                     builder.Configuration.GetConnectionString("DefaultConnection")
+                         ?? throw new InvalidOperationException("Connection string"
+                         + "'DefaultConnection' not found.");
+
+            builder.Services.AddDbContext<ApplicationDbContext>(options => {
+                options.UseSqlServer(connectionString);
+            });
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(option =>
             {
                 //option.User.RequireUniqueEmail = true;
             })
-                .AddEntityFrameworkStores<ApplicationDbContext>();
-                
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
+
 
             //For Register
 
@@ -27,6 +38,7 @@ namespace Cinema
             builder.Services.AddScoped<IRepository<Cenema>, Repository<Cenema>>();
             builder.Services.AddScoped<IRepository<Movie>, Repository<Movie>>();
             builder.Services.AddScoped<IMovieSubImageRepo, MovieSubImageRepo>();
+            builder.Services.AddTransient<IEmailSender, EmailSender>();
 
             var app = builder.Build();
 
@@ -46,7 +58,7 @@ namespace Cinema
             app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{Area=Admin}/{controller=Movie}/{action=Index}/{id?}")
+                pattern: "{Area=Identity}/{controller=Account}/{action=Register}/{id?}")
                 .WithStaticAssets();
 
             app.Run();

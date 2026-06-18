@@ -6,5 +6,6 @@ global using Cinema.Services;
 global using Cinema.ViewModels;
 global using Cinema.Repository;
 global using Microsoft.AspNetCore.Identity;
+global using Cinema.ModelView;
 
 
